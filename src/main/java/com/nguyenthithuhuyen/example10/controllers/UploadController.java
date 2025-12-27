@@ -1,10 +1,12 @@
 package com.nguyenthithuhuyen.example10.controllers;
 
 import com.nguyenthithuhuyen.example10.security.services.CloudinaryService;
-import lombok.RequiredArgsConstructor;
+// import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.HttpStatus;
+
 
 import java.util.Map;
 
@@ -20,8 +22,13 @@ public class UploadController {
     }
 
 @PostMapping("/image")
-public ResponseEntity<Map<String, String>> uploadImage(@RequestParam("file") MultipartFile file) {
-    String url = cloudinaryService.uploadImage(file); // dùng đúng tên phương thức
-    return ResponseEntity.ok(Map.of("url", url));
+public ResponseEntity<?> uploadImage(@RequestParam("file") MultipartFile file) {
+    try {
+        String url = cloudinaryService.uploadImage(file);
+        return ResponseEntity.ok(Map.of("url", url));
+    } catch (Exception e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", e.getMessage()));
+    }
 }
 }
