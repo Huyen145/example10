@@ -12,153 +12,64 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
+import com.nguyenthithuhuyen.example10.payload.request.ProductRequest;
+
 
 import java.math.BigDecimal;
 import java.util.List;
 
+
 @RestController
-@RequiredArgsConstructor
 @RequestMapping("/api/products")
+@RequiredArgsConstructor
 public class ProductController {
 
     private final ProductService productService;
     private final CategoryRepository categoryRepository;
-    private final ProductServiceImpl productWithPromotionService;
 
-    // ======================
-    // GET ALL PRODUCTS
-    // ======================
     @GetMapping
-    public ResponseEntity<List<Product>> getAllProducts() {
+    public ResponseEntity<List<Product>> getAll() {
         return ResponseEntity.ok(productService.getAllProducts());
     }
 
-    // ======================
-    // GET PRODUCT BY ID
-    // ======================
-    @GetMapping("/{id}")
-    public ResponseEntity<Product> getProductById(@PathVariable Long id) {
-        return ResponseEntity.ok(productService.getProductById(id));
-    }
-
-    // ======================
-    // CREATE PRODUCT
-    // ======================
-    // @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
-    public ResponseEntity<ProductResponseDto> createProduct(
-            @RequestBody ProductRequest request) {
+    public ResponseEntity<?> create(@RequestBody ProductRequest req) {
 
-        Category category = categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new RuntimeException("Category not found"));
+        Category category = categoryRepository.findById(req.getCategoryId())
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "Category không tồn tại"));
 
         Product product = Product.builder()
-                .name(request.getName())
-                .description(request.getDescription())
-                .price(request.getPrice())
-                .stockQuantity(request.getStockQuantity())
-                .isActive(request.getIsActive() != null ? request.getIsActive() : true)
-                .imageUrl(request.getImageUrl())
+                .name(req.getName())
+                .description(req.getDescription())
+                .price(req.getPrice())
+                .stockQuantity(req.getStockQuantity())
+                .imageUrl(req.getImageUrl())
+                .isActive(req.getIsActive())
                 .category(category)
                 .build();
 
-        Product saved = productService.createProduct(product);
-        return ResponseEntity.status(HttpStatus.CREATED).body(mapToDto(saved));
+        return ResponseEntity.ok(productService.createProduct(product));
     }
 
-    // ======================
-    // UPDATE PRODUCT
-    // ======================
-    // @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
-    public ResponseEntity<ProductResponseDto> updateProduct(
-            @PathVariable Long id,
-            @RequestBody ProductRequest request) {
+    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody ProductRequest req) {
 
-        Category category = categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new RuntimeException("Category not found"));
+        Category category = categoryRepository.findById(req.getCategoryId())
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "Category không tồn tại"));
 
         Product product = Product.builder()
-                .name(request.getName())
-                .description(request.getDescription())
-                .price(request.getPrice())
-                .stockQuantity(request.getStockQuantity())
-                .isActive(request.getIsActive())
-                .imageUrl(request.getImageUrl())
+                .name(req.getName())
+                .description(req.getDescription())
+                .price(req.getPrice())
+                .stockQuantity(req.getStockQuantity())
+                .imageUrl(req.getImageUrl())
+                .isActive(req.getIsActive())
                 .category(category)
                 .build();
 
-        Product updated = productService.updateProduct(id, product);
-        return ResponseEntity.ok(mapToDto(updated));
-    }
-
-    // ======================
-    // DELETE PRODUCT
-    // ======================
-    @PreAuthorize("hasRole('ADMIN')")
-    @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteProduct(@PathVariable Long id) {
-        productService.deleteProduct(id);
-        return ResponseEntity.ok("Product deleted");
-    }
-
-    // ======================
-    // PRODUCTS WITH ACTIVE PROMOTIONS
-    // ======================
-    @GetMapping("/with-active-promotions")
-    public ResponseEntity<List<ProductWithPromotionsDTO>> getProductsWithPromotions() {
-        return ResponseEntity.ok(
-                productWithPromotionService.getAllProductsWithActivePromotions()
-        );
-    }
-
-    // ======================
-    // DTO MAPPER
-    // ======================
-    private ProductResponseDto mapToDto(Product p) {
-        ProductResponseDto dto = new ProductResponseDto();
-        dto.id = p.getId();
-        dto.name = p.getName();
-        dto.description = p.getDescription();
-        dto.price = p.getPrice();
-        dto.imageUrl = p.getImageUrl();
-        dto.stockQuantity = p.getStockQuantity();
-        dto.isActive = p.getIsActive();
-        dto.category = p.getCategory();
-        return dto;
-    }
-
-    // ======================
-    // REQUEST DTO
-    // ======================
-    public static class ProductRequest {
-        private String name;
-        private String description;
-        private BigDecimal price;
-        private Long categoryId;
-        private Integer stockQuantity;
-        private Boolean isActive;
-        private String imageUrl;
-
-        public String getName() { return name; }
-        public void setName(String name) { this.name = name; }
-
-        public String getDescription() { return description; }
-        public void setDescription(String description) { this.description = description; }
-
-        public BigDecimal getPrice() { return price; }
-        public void setPrice(BigDecimal price) { this.price = price; }
-
-        public Long getCategoryId() { return categoryId; }
-        public void setCategoryId(Long categoryId) { this.categoryId = categoryId; }
-
-        public Integer getStockQuantity() { return stockQuantity; }
-        public void setStockQuantity(Integer stockQuantity) { this.stockQuantity = stockQuantity; }
-
-        public Boolean getIsActive() { return isActive; }
-        public void setIsActive(Boolean isActive) { this.isActive = isActive; }
-
-        public String getImageUrl() { return imageUrl; }
-        public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+        return ResponseEntity.ok(productService.updateProduct(id, product));
     }
 }
